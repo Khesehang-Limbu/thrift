@@ -2,12 +2,12 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Case, When, BooleanField, Value, ExpressionWrapper
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.generic import TemplateView, CreateView, ListView, View
+from django.views.generic import TemplateView, CreateView, ListView, View, DetailView
 
-from .constants import ProductApprovalStatus, SellerProductCategory, UserProductCategory, Roles
-from .models import UserProduct, Cart, SellerProduct, RentalRequest, Product, OrderItem
+from .constants import ProductApprovalStatus, Roles, ProductCategory
+from .models import Cart, RentalRequest, Product, OrderItem
 from apps.accounts.decorators import role_required
-from .forms import SellerProductForm, UserProductForm, OrderForm
+from .forms import ProductForm, OrderForm
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 
@@ -42,10 +42,10 @@ class IndexView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(IndexView, self).get_context_data(**kwargs)
-        products = SellerProduct.objects.all()
-        sale_products = products.filter(category=SellerProductCategory.PRODUCT)
-        rent_products = products.filter(category=SellerProductCategory.RENTING)
-        thrifts = UserProduct.objects.filter(category=UserProductCategory.THRIFT)
+        products = Product.objects.all()
+        sale_products = products.filter(category=ProductCategory.PRODUCT)
+        rent_products = products.filter(category=ProductCategory.RENTING)
+        thrifts = Product.objects.filter(category=ProductCategory.THRIFT)
 
         context.update({
             'sale_products': sale_products,
@@ -62,7 +62,7 @@ class ProductsView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(ProductsView, self).get_context_data(**kwargs)
-        products = SellerProduct.objects.filter(
+        products = Product.objects.filter(
             status="Approved",
             category='Product',
         ).order_by('-created_at')
@@ -75,6 +75,9 @@ class ProductsView(TemplateView):
 
         return context
 
+class ProductDetailView(DetailView):
+    template_name = "main/product_detail.html"
+    queryset = Product.objects.all()
 
 # Donate view
 class DonateView(LoginRequiredMixin, TemplateView):
@@ -86,7 +89,7 @@ class RecycleView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        recycled_products = UserProduct.objects.filter(category=UserProductCategory.RECYCLE)
+        recycled_products = Product.objects.filter(category=ProductCategory.RECYCLE)
         context.update({
             'recycled_products': recycled_products,
         })
@@ -99,7 +102,7 @@ class ThriftView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        thrift_products = UserProduct.objects.filter(category=UserProductCategory.THRIFT)
+        thrift_products = Product.objects.filter(category=ProductCategory.THRIFT)
         context.update({
             'thrift_products': thrift_products,
         })
@@ -114,18 +117,18 @@ def rental_pending(request):
 
 # User dashboard view (show pending uploads)
 class UserDashboardView(LoginRequiredMixin, RoleRequiredMixin, ListView):
-    model = UserProduct
+    model = Product
     template_name = "main/user_dashboard.html"
     required_roles = "user"
 
     def get_queryset(self):
-        queryset = UserProduct.objects.filter(user=self.request.user)
+        queryset = Product.objects.filter(user=self.request.user)
         return queryset
 
 
 # Product page (show only approved items)
 def product_page(request):
-    products = UserProduct.objects.filter(status='approved')
+    products = Product.objects.filter(status='approved')
     return render(request, 'main/products.html', {'products': products})
 
 
@@ -137,7 +140,7 @@ def admin_thrift_recycle_list(request):
 # Rent item view (user submits a rental request)
 @login_required
 def rent_item(request, item_id):
-    item = get_object_or_404(UserProduct, id=item_id)
+    item = get_object_or_404(Product, id=item_id)
     if item.status == 'approved' and item.is_rentable:
         rental_request = RentalRequest.objects.create(user=request.user, cloth_item=item)
         return redirect('rental_pending')  # Redirect to rental pending page
@@ -148,7 +151,7 @@ def rent_item(request, item_id):
 @role_required(allowed_roles=['seller'])
 def upload_clothes_for_product(request):
     if request.method == 'POST':
-        form = SellerProductForm(request.POST, request.FILES)
+        form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             product = form.save(commit=False)
             product.seller = request.user
@@ -156,29 +159,29 @@ def upload_clothes_for_product(request):
             product.save()
             return redirect('seller_product_list')
     else:
-        form = SellerProductForm()
+        form = ProductForm()
     return render(request, 'main/upload_clothes.html', {'form': form})
 
 
 # Organization view for donations
 @role_required(allowed_roles=['organization'])
 def org_view_donations(request):
-    cloth_uploads = UserProduct.objects.filter(upload_type='donation', status='pending')
+    cloth_uploads = Product.objects.filter(upload_type='donation', status='pending')
     return render(request, 'main/donations_list.html', {'cloth_uploads': cloth_uploads})
 
 
 # Admin approve clothes view
 @role_required(allowed_roles=['admin'])
 def admin_approve_clothes(request):
-    cloth_uploads = UserProduct.objects.filter(status='pending')
+    cloth_uploads = Product.objects.filter(status='pending')
     return render(request, 'main/approve_clothes.html', {'cloth_uploads': cloth_uploads})
 
 
 # Cloth upload view (user uploads cloth for donation, recycle, etc.)
 class UploadClothView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     required_roles = "user"
-    model = UserProduct
-    form_class = UserProductForm
+    model = Product
+    form_class = ProductForm
     template_name = "main/upload_cloth.html"
 
     def dispatch(self, request, *args, **kwargs):
@@ -202,7 +205,7 @@ class UploadClothView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        if self.upload_type != UserProductCategory.THRIFT:
+        if self.upload_type != ProductCategory.THRIFT:
             form.fields.pop('price', None)
         return form
 
@@ -210,7 +213,7 @@ class UploadClothView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
 # Admin approval view for each cloth upload
 @staff_member_required
 def approve_upload(request, upload_id):
-    product = get_object_or_404(UserProduct, id=upload_id)
+    product = get_object_or_404(Product, id=upload_id)
     if request.method == 'POST':
         product.status = 'approved'
         product.save()
@@ -225,7 +228,7 @@ class OrganizationDashboardView(LoginRequiredMixin, RoleRequiredMixin, TemplateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        cloth_uploads = UserProduct.objects.filter(category__in=[UserProductCategory.DONATION, UserProductCategory.RECYCLE], status='pending').order_by(
+        cloth_uploads = Product.objects.filter(category__in=[ProductCategory.DONATION, ProductCategory.RECYCLE], status='pending').order_by(
             "-created_at"
         )
         context.update({
@@ -238,7 +241,7 @@ class OrganizationDashboardView(LoginRequiredMixin, RoleRequiredMixin, TemplateV
 def confirm_cloth_upload(request, upload_id):
     if not request.user.is_authenticated or request.user.role != 'organization':
         raise PermissionDenied("You are not authorized to perform this action.")
-    cloth = get_object_or_404(UserProduct, id=upload_id)
+    cloth = get_object_or_404(Product, id=upload_id)
     if request.method == 'POST':
         cloth.status = 'confirmed'
         cloth.save()
@@ -248,10 +251,10 @@ def confirm_cloth_upload(request, upload_id):
 class RentalApprovalView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     required_roles = Roles.ADMIN
     template_name = "main/rentals.html"
-    object_list = SellerProduct.objects.filter(status='approved')
+    object_list = Product.objects.filter(status='approved')
 
     def get_queryset(self):
-        return self.object_list.filter(category=SellerProductCategory.RENTING)
+        return self.object_list.filter(category=ProductCategory.RENTING)
 
     def get(self, request, *args, **kwargs):
         qs = self.get_queryset()
@@ -263,7 +266,7 @@ class RentalApprovalView(LoginRequiredMixin, RoleRequiredMixin, ListView):
                 product = qs.get(id=product_id)
                 product.status = ProductApprovalStatus.APPROVED
                 product.save()
-            except SellerProduct.DoesNotExist:
+            except Product.DoesNotExist:
                 pass  # Optional: Add a message or log it
 
         context = super().get_context_data(**kwargs)
@@ -280,18 +283,18 @@ def user_cart(request):
 # Display user's uploaded products
 class SellerUploadView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     template_name = "main/seller_upload_product.html"
-    model = SellerProduct
-    form_class = SellerProductForm
+    model = Product
+    form_class = ProductForm
     required_roles = "seller"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        form = SellerProductForm()
+        form = ProductForm()
         context['form'] = form
         return context
 
     def post(self, request, *args, **kwargs):
-        form = SellerProductForm(request.POST, request.FILES)
+        form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             product = form.save(commit=False)
             product.user = request.user
@@ -303,24 +306,24 @@ class SellerUploadView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
 
 
 # Seller's product list view
-class SellerProductListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
-    model = SellerProduct
+class ProductListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
+    model = Product
     required_roles = "seller"
     template_name = "main/seller_product_list.html"
 
     def get_queryset(self):
-        qs = SellerProduct.objects.filter(user=self.request.user).order_by('-created_at')
+        qs = Product.objects.filter(user=self.request.user).order_by('-created_at')
         return qs
 
 
 # Admin product approval view
 class AdminProductApprovalView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     required_roles = "admin"
-    model = SellerProduct
+    model = Product
     template_name = "main/admin_product_approval.html"
 
     def get_queryset(self):
-        qs = SellerProduct.objects.annotate(
+        qs = Product.objects.annotate(
             is_pending=Case(
                 When(status=ProductApprovalStatus.PENDING, then=Value(True)),
                 default=Value(False),
@@ -337,7 +340,7 @@ class AdminConfirmProduct(LoginRequiredMixin, RoleRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         product_id = kwargs.get('product_id')
-        product = get_object_or_404(SellerProduct, id=product_id)
+        product = get_object_or_404(Product, id=product_id)
         product.status = ProductApprovalStatus.APPROVED
         product.save()
         return redirect('main:admin_product_approval')
@@ -349,7 +352,7 @@ class ProductListView(ListView):
 
 
 def product_list(request):
-    products = UserProduct.objects.filter(
+    products = Product.objects.filter(
         upload_type='product',
         status='confirmed'  # or 'approved'
     ).order_by('-created_at')
@@ -366,8 +369,8 @@ class ProductRentListView(ListView):
     template_name = "main/renting.html"
 
     def get_queryset(self):
-        qs = SellerProduct.objects.filter(
-            category=SellerProductCategory.RENTING,
+        qs = Product.objects.filter(
+            category=ProductCategory.RENTING,
             status=ProductApprovalStatus.APPROVED
         ).order_by('-created_at')
         return qs
@@ -386,7 +389,7 @@ class CartView(LoginRequiredMixin, RoleRequiredMixin, View):
         if self.action == 'add':
             product_id = self.item_id
             try:
-                product = SellerProduct.objects.get(id=product_id)
+                product = Product.objects.get(id=product_id)
                 cart_item, created = Cart.objects.get_or_create(user=request.user, product=product)
                 if not created:
                     cart_item.quantity += 1
@@ -395,7 +398,7 @@ class CartView(LoginRequiredMixin, RoleRequiredMixin, View):
                 messages.success(request, "Successfully added to cart")
                 return redirect('main:product')
 
-            except SellerProduct.DoesNotExist:
+            except Product.DoesNotExist:
                 messages.error(request, "Error Adding to Cart")
                 return redirect('main:product')
 
@@ -417,8 +420,8 @@ class CartView(LoginRequiredMixin, RoleRequiredMixin, View):
             for cart in qs:
                 print(cart.product)
 
-            sale_products = [cart for cart in qs if cart.product.category == SellerProductCategory.PRODUCT]
-            rental_products = [cart for cart in qs if cart.product.category == SellerProductCategory.RENTING]
+            sale_products = [cart for cart in qs if cart.product.category == ProductCategory.PRODUCT]
+            rental_products = [cart for cart in qs if cart.product.category == ProductCategory.RENTING]
 
             total = qs.aggregate(total_cost=Sum('item_total'))['total_cost'] or 0
 

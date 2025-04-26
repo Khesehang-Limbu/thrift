@@ -1,0 +1,127 @@
+<header>
+    <nav class="navbar navbar-expand-lg navbar-light shadow-sm p-5">
+        <div class="container">
+            <a class="navbar-brand fw-bold link-light" href="{% url 'main:index' %}"><i class="fa-solid fa-leaf"></i>
+                ECO Refashion</a>
+
+            <button class="navbar-toggler border-light p-2" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarContent"
+                    aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fa-solid fa-bars fa-xl link-light"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarContent align-items-center">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    {% if user.is_authenticated and user.role == 'user' %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'main:product' %}"><i
+                                class="fas fa-tshirt"></i> Products</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'main:donate' %}"><i
+                                class="fas fa-hand-holding-heart"></i> Donate</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'main:thrift' %}"><i
+                                class="fas fa-store-alt"></i> Thrift</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'main:recycle' %}"><i
+                                class="fas fa-recycle"></i> Recycle</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'main:renting' %}"><i
+                                class="fas fa-people-carry"></i> Renting</a></li>
+                    {% endif %}
+
+                    {% if user.is_authenticated and user.role == 'seller' %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'main:seller_upload_product' %}"><i
+                                class="fas fa-upload"></i> Upload</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'main:seller_product_list' %}"><i
+                                class="fas fa-boxes"></i> My Products</a></li>
+                    {% endif %}
+
+                    {% if user.is_authenticated and user.role == 'admin' %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'main:admin_product_approval' %}"><i
+                                class="fas fa-check-circle"></i> Approvals</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'main:admin_rental_approval' %}"><i
+                                class="fas fa-handshake"></i> Renting</a></li>
+                    {% endif %}
+
+                    {% if user.is_authenticated and user.role == 'organization' %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'main:organization_dashboard' %}"><i
+                                class="fas fa-building"></i> Org Dashboard</a></li>
+                    {% endif %}
+                </ul>
+
+                {% if user.is_authenticated %}
+                    <ul class="navbar-nav mb-2 mb-lg-0 align-items-center">
+                        {% if user.role == 'user' %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="transactionsDropdown" role="button"
+                                   data-bs-toggle="dropdown">
+                                    <i class="fas fa-briefcase"></i> Transactions
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-shopping-bag"></i> My Orders</a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-box-open"></i> My Rentals</a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-gift"></i> My Donations</a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-sync-alt"></i> My
+                                        Recycles</a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+
+                        <li class="nav-item dropdown">
+                            <span class="nav-link dropdown-toggle user-nav-menu px-3 rounded-3" id="profileDropdown" role="button"
+                               data-bs-toggle="dropdown">
+                                {% if user.profile_image %}
+                                    <img src="{{ user.profile_image.url }}" alt="{{ user.get_full_name }}" class="rounded-circle" style="width: 40px; height: 40px;" />
+                                {% else %}
+                                    <i class="fas fa-user"></i>
+                                {% endif %}
+                                {{ user.get_full_name }}
+                            </span>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                {% if user.role == 'user' %}
+                                    <li><a class="dropdown-item" href="{% url 'main:user_dashboard' %}"><i
+                                            class="fas fa-chart-line"></i> Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'main:cart' %}"><i
+                                            class="fas fa-shopping-cart"></i> Cart</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                {% elif user.role == 'seller' %}
+                                    <li><a class="dropdown-item" href="{% url 'main:user_dashboard' %}"><i
+                                            class="fas fa-chart-bar"></i> Seller Dashboard</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                {% elif user.role == 'admin' %}
+                                    <li><a class="dropdown-item" href="{% url 'main:user_dashboard' %}"><i
+                                            class="fas fa-tools"></i> Admin Panel</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                {% elif user.role == 'organization' %}
+                                    <li><a class="dropdown-item" href="{% url 'main:organization_dashboard' %}"><i
+                                            class="fas fa-sitemap"></i> Org Dashboard</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                {% endif %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                        <i class="fa-solid fa-id-card"></i> Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}"><i
+                                        class="fas fa-sign-out-alt"></i> Logout</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                {% else %}
+                    <a class="btn btn-outline-light ms-2" href="{% url 'accounts:login' %}"><i
+                            class="fas fa-sign-in-alt"></i> Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+</header>
+

@@ -6,16 +6,12 @@ class Roles(TextChoices):
     ORGANIZATION = "organization"
     SELLER = "seller"
 
-class SellerProductCategory(TextChoices):
+class ProductCategory(TextChoices):
     PRODUCT = "product", "Product"
     RENTING = "renting", "Renting"
-
-
-class UserProductCategory(TextChoices):
     DONATION = "donation", "Donation"
     RECYCLE = "recycle", "Recycle"
     THRIFT = "thrift", "Thrift"
-
 
 class ProductApprovalStatus(TextChoices):
     PENDING = "pending", "Pending"

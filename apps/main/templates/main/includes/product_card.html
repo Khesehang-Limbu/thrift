@@ -1,31 +1,16 @@
-<div class="product-card">
-    <div class="product-image-container">
-        {% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.title }}" class="product-image">
+{% load static %}
+
+<div class="col-sm-6 col-md-4 col-lg-3">
+    <div class="card h-100 shadow-sm">
+        {% if obj.image %}
+            <img src="{{ obj.image.url }}" class="card-img-top object-fit-cover" alt="{{ obj.title }}">
         {% else %}
-            <div class="no-image">No image available</div>
-        {% endif %}
-        <div class="product-badge">For Sale</div>
-    </div>
-
-    <div class="product-details">
-        <h3 class="product-title">{{ product.title }}</h3>
-        <p class="product-description">{{ product.description|truncatechars:100 }}</p>
-
-        <div class="product-meta">
-            <span class="price">Rs. {{ product.price }}</span>
-            {% if product.available_size %}
-                <span class="size">Size: {{ product.available_size }}</span>
-            {% endif %}
+            <img src="{% static 'images/default_clothes.webp' %}" class="card-img-top object-fit-fill" alt="{{ obj.title }}"/>
+        {% endif %} 
+        <div class="card-body">
+            <h5 class="card-title">{{ obj.title }}</h5>
+            <p class="card-text text-muted">Rs. {{ obj.price }}</p>
+            <a href="{% url 'main:product_detail' obj.id %}" class="btn btn-outline-primary">View</a>
         </div>
-
-        <div class="seller-info">
-            <span class="seller-label">Sold by:</span>
-            <span class="seller-name">{{ product.seller.username }}</span>
-        </div>
-
-        <a class="add-to-cart" style="text-align: center;" href="{% url 'main:cart_action_with_id' 'add' product.id %}">
-            Add to Cart
-        </a>
     </div>
 </div>

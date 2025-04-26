@@ -1,8 +1,8 @@
 from django.db import models
 from django.conf import settings
 
-from .constants import ProductApprovalStatus, SellerProductCategory, UserProductCategory, TransactionStatus, \
-    PaymentChoices
+from .constants import ProductApprovalStatus, TransactionStatus, \
+    PaymentChoices, ProductCategory
 
 
 # main/models.py
@@ -17,24 +17,10 @@ class Product(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     available_size = models.CharField(max_length=50, blank=True, null=True)
     color = models.CharField(max_length=50, blank=True, null=True)
-
-    class Meta:
-        abstract = True
-
-
-class SellerProduct(Product):
-    category = models.CharField(max_length=25, choices=SellerProductCategory.choices)
+    category = models.CharField(max_length=25, choices=ProductCategory.choices)
 
     def __str__(self):
         return f"{self.title} - {self.category}"
-
-
-class UserProduct(Product):
-    category = models.CharField(max_length=25, choices=UserProductCategory.choices)
-
-    def __str__(self):
-        return f"{self.title} - {self.category}"
-
 
 class RentalRequest(models.Model):
     STATUS_CHOICES = (
@@ -43,7 +29,7 @@ class RentalRequest(models.Model):
         ('rejected', 'Rejected'),
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    cloth_item = models.ForeignKey('UserProduct', on_delete=models.CASCADE)
+    cloth_item = models.ForeignKey('Product', on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     request_date = models.DateTimeField(auto_now_add=True)
 
@@ -54,7 +40,7 @@ class RentalRequest(models.Model):
 class Transaction(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    products = models.ManyToManyField(SellerProduct, related_name='products')
+    products = models.ManyToManyField(Product, related_name='products')
     transaction_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=25, choices=TransactionStatus.choices, default=TransactionStatus.PENDING)
 
@@ -74,7 +60,7 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
-    product = models.ForeignKey(SellerProduct, on_delete=models.PROTECT)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
@@ -87,7 +73,7 @@ class OrderItem(models.Model):
 
 class Cart(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    product = models.ForeignKey("main.SellerProduct", on_delete=models.CASCADE, related_name='cart_items')
+    product = models.ForeignKey("main.Product", on_delete=models.CASCADE, related_name='cart_items')
     quantity = models.PositiveIntegerField(default=1)
     added_at = models.DateTimeField(auto_now_add=True)
 

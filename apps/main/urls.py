@@ -1,22 +1,26 @@
 from django.urls import path, include
 from . import views
-from .constants import UserProductCategory
-from .views import IndexView, ProductsView, SellerUploadView, SellerProductListView, AdminProductApprovalView, \
+from .constants import ProductCategory
+from .views import IndexView, ProductsView, SellerUploadView, ProductListView, AdminProductApprovalView, \
     AdminConfirmProduct, UploadClothView, UserDashboardView, CartView, ProductRentListView, CheckoutView, RecycleView, \
-    ThriftView, DonateView, OrganizationDashboardView, RentalApprovalView
+    ThriftView, DonateView, OrganizationDashboardView, RentalApprovalView, ProductDetailView
 
 app_name = 'main'
 
+product_paths = [
+    path('products/', ProductsView.as_view(), name='product'),
+    path("products/detail/<int:id>", ProductDetailView.as_view(), name='product_detail'),
+]
+
 urlpatterns = [
     path('', IndexView.as_view(), name='index'),
-    path('products/', ProductsView.as_view(), name='product'),
     path('donate/', DonateView.as_view(), name='donate'),
-    path('user/upload/donate/', UploadClothView.as_view(), {'upload_type': UserProductCategory.DONATION}, name='user_upload_donate'),
+    path('user/upload/donate/', UploadClothView.as_view(), {'upload_type': ProductCategory.DONATION}, name='user_upload_donate'),
     path('recycle/', RecycleView.as_view(), name='recycle'),
-    path('user/upload/recycle/', UploadClothView.as_view(), {'upload_type': UserProductCategory.RECYCLE}, name='user_upload_recycle'),
+    path('user/upload/recycle/', UploadClothView.as_view(), {'upload_type': ProductCategory.RECYCLE}, name='user_upload_recycle'),
 
     path('thrift/', ThriftView.as_view(), name='thrift'),
-    path('user/upload/thrift/', UploadClothView.as_view(), {'upload_type': UserProductCategory.THRIFT}, name='user_upload_thrift'),
+    path('user/upload/thrift/', UploadClothView.as_view(), {'upload_type': ProductCategory.THRIFT}, name='user_upload_thrift'),
     path('cart/', CartView.as_view(), name='cart'),
     path('cart/<str:action>/', CartView.as_view(), name='cart_action'),
     path('cart/<str:action>/<int:item_id>/', CartView.as_view(), name='cart_action_with_id'),
@@ -33,7 +37,7 @@ urlpatterns = [
 
     # Seller Dashboard URLs
     path('seller/upload/', SellerUploadView.as_view(), name='seller_upload_product'),
-    path('seller/products/', SellerProductListView.as_view(), name='seller_product_list'),
+    path('seller/products/', ProductListView.as_view(), name='seller_product_list'),
 
     # Admin Dashboard URLs (removed duplicate confirm path)
     path('admin-dashboard/product-approval/', AdminProductApprovalView.as_view(), name='admin_product_approval'),
@@ -44,3 +48,5 @@ urlpatterns = [
     path('products/', views.product_list, name='product_list'),
     path('renting/', ProductRentListView.as_view(), name='renting'),
 ]
+
+urlpatterns += product_paths
