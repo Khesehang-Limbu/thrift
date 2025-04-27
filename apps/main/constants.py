@@ -8,7 +8,7 @@ class Roles(TextChoices):
 
 class ProductCategory(TextChoices):
     PRODUCT = "product", "Product"
-    RENTING = "renting", "Renting"
+    RENTING = "rental", "Rental"
     DONATION = "donation", "Donation"
     RECYCLE = "recycle", "Recycle"
     THRIFT = "thrift", "Thrift"
@@ -20,9 +20,15 @@ class ProductApprovalStatus(TextChoices):
 
 class TransactionStatus(TextChoices):
     PENDING = "pending", "Pending"
-    PAID = "paid", "Paid"
-    CANCELED = "canceled", "Canceled"
+    COMPLETED = "completed", "Completed"
+    CANCELED = "canceled", "User Canceled"
 
 class PaymentChoices(TextChoices):
     COD = "cod", "Cod"
     KHALTI = "khalti", "Khalti"
+
+class ProductDeliveryOption(TextChoices):
+    PICKUP = "pickup", "Pickup"
+    DROPOFF = "dropoff", "Dropoff"
+
+PRODUCT_CATEGORY_LIST = [key for (key, value) in ProductCategory.choices]

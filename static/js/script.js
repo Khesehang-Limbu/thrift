@@ -48,6 +48,27 @@ document.addEventListener("DOMContentLoaded", function () {
             e.preventDefault();
         }
     });
+
+    const deliveryOption = document.querySelector('select[name="delivery_option"]');
+    const pickupAddressInput = document.querySelector('input[name="pickup_address"]');
+    const pickupPhoneInput = document.querySelector('input[name="pickup_phone"]');
+
+    const pickupAddressGroup = pickupAddressInput?.closest('div');
+    const pickupPhoneGroup = pickupPhoneInput?.closest('div');
+
+    function togglePickupFields() {
+        if (deliveryOption.value === 'pickup') {
+            pickupAddressGroup?.classList.remove('d-none');
+            pickupPhoneGroup?.classList.remove('d-none');
+        } else {
+            pickupAddressGroup?.classList.add('d-none');
+            pickupPhoneGroup?.classList.add('d-none');
+        }
+    }
+
+    togglePickupFields();
+
+    deliveryOption?.addEventListener('change', togglePickupFields);
 });
 
 function autoDismiss() {
@@ -59,3 +80,5 @@ function autoDismiss() {
         });
     }, 3000);
 }
+
+
