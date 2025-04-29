@@ -10,7 +10,7 @@
             {% else %}
                 <h2 class="mb-0">Rental Request</h2>
             {% endif %}
-            {% if request.user.role == "user" and title %}
+            {% if request.user.role == "user" and title and title != "Orders" %}
                 <a href="{% url 'main:create' title %}" class="btn btn-primary me-2">
                     Add {{ title|title }}
                 </a>

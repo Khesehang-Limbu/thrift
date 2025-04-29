@@ -56,4 +56,4 @@ class ProductForm(forms.ModelForm):
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        fields = ["payment_method", "total_amount"]
+        fields = ["payment_method", "total_amount", "full_name", "address", "phone_number", "city", "postal_code"]
