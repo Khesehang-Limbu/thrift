@@ -32,6 +32,16 @@ class ProductForm(forms.ModelForm):
             (category, category.title()),
         ]
 
+        if category in [ProductCategory.PRODUCT, ProductCategory.RENTING]:
+            if "delivery_option" in self.fields:
+                del self.fields["delivery_option"]
+                del self.fields["pickup_address"]
+                del self.fields["pickup_phone"]
+
+        if category in [ProductCategory.DONATION, ProductCategory.RECYCLE]:
+            if "price" in self.fields:
+                del self.fields["price"]
+
         if category == ProductCategory.DONATION or category == ProductCategory.RECYCLE:
             if "price" in self.fields:
                 del self.fields["price"]

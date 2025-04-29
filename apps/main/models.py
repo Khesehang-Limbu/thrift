@@ -33,11 +33,11 @@ class RentalRequest(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     order = models.ForeignKey('Order', on_delete=models.CASCADE, null=True, blank=True)
     status = models.CharField(max_length=20, choices=ProductApprovalStatus.choices, default=ProductApprovalStatus.PENDING)
-    requested_date = models.DateTimeField(auto_now_add=True)
-    requested_for = models.DateTimeField(null=True, blank=True)
+    requested_date = models.DateField(auto_now_add=True)
+    requested_for = models.DateField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.order.name} ({self.status})"
+        return f"{self.user.username} - {self.order} ({self.status})"
 
 
 class Transaction(models.Model):
